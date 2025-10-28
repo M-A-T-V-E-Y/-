@@ -1,60 +1,66 @@
 from tkinter import *
-from read_files import open_file
 import os
 from tkinter.filedialog import askopenfile
+from PIL import ImageTk, Image
 
 
 def open_files1():
     global f1
     f1 = askopenfile(mode='r', filetypes=[("excel files", "*.xlsx")])
     if f1 is not None:
-        lbl_file1.config(text=f"Загрузите файл. Сейчас загружен «{os.path.basename(f1.name)}»")
+        lbl_file1.config(text=f"Ранний файл\nСейчас загружен «{os.path.basename(f1.name)}»")
 
 
 def open_files2():
     global f2
     f2 = askopenfile(mode='r', filetypes=[("excel files", "*.xlsx")])
     if f2 is not None:
-        lbl_file2.config(text=f"Загрузите файл. Сейчас загружен «{os.path.basename(f2.name)}»")
+        lbl_file2.config(text=f"Поздний файл\nСейчас загружен «{os.path.basename(f2.name)}»")
 
 
 wnd = Tk()
 wnd.title('Отчёт успеваемости')
-wnd.geometry('700x700')
+imag = Image.open("./Images/background.jpg")
+width = (int(imag.size[0]) // 2)
+height = (int(imag.size[1]) // 2)
+imag = imag.resize((width, height))
+image = ImageTk.PhotoImage(imag)
+panel = Label(wnd, image=image)
+panel.pack(side="top", fill="both")
+#panel.pack(side="top", fill="both", expand="no")
+wnd.geometry(f'{width}x{height}')
 
 def sravnit():  #функция сравнения 
     pass
 
-<<<<<<< HEAD
-
 btn_c1 = Button(text='Выбрать ранний файл', command=open_files1) #выбор файлов для сравнения
-btn_c1.pack()
+btn_c1.place(x=200, y=100)
 btn_c2 = Button(text='Выбрать поздний файл', command=open_files2) #выбор файлов для сравнения
-btn_c2.pack()
-=======
-def choose():   #выбор файлов
-    pass
+btn_c2.place(x=200, y=200)
 
 btn_go = Button(text='Сравнить',command=sravnit) #кнопка запуска сравнения
-btn_go.place(relx=0.1,rely=0.8)
-#btn_go.pack()
-
-btn_c = Button(text='Выбрать файлы',command=choose) #выбор файлов для сравнения
-btn_c.place(relx=0.8,rely=0.8)
-#btn_c.pack()
->>>>>>> 37c76c185ccc81a006c8b127a14622c2bf8ce712
+btn_go.place(x=200, y=300)
 
 
-lbl_file1 = Label(text="gfrdegr") #отображение файл1
-lbl_file1.pack()
+lbl_file1 = Label(text="Ранний файл\nНа данный момент файл не загружен", bg="#f5f5f5") #отображение файл1
+lbl_file1.place(x=width//2, y=height//3)
 
-lbl_file2 = Label(text="r3wgfttre") #отображение файл2
-lbl_file2.pack()
+lbl_file2 = Label(text="Поздний файл\nНа данный момент файл не загружен", bg="#f5f5f5") #отображение файл2
+lbl_file2.place(x=width//2, y=height//4)
 
-<<<<<<< HEAD
+
+
+# canvas = tk.Canvas(root, width=width, height=height)
+# canvas.pack(side="top", fill="both", expand="no")
+#
+# canvas.create_image(0, 0, anchor="nw", image=image)
+#
+# # Создаем кнопку и размещяем ее в "окне" ("контейнере") на Canvas
+# button = tk.Button(root, text='Quit', command=root.quit)
+# canvas.create_window((250, 250), anchor="nw", window=button)
+#
+# # Создаем текст через create_text, в отличие от Label у него будет прозрачный фон
+# canvas.create_text(100, 100, text="Cat", fill="Yellow", font="Verdana 14")
+
+
 wnd.mainloop()
-=======
-
-
-wnd.mainloop()
->>>>>>> 37c76c185ccc81a006c8b127a14622c2bf8ce712
