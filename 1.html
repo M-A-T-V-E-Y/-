@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Умный журнал - Сравнение оценок</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #76081c 0%, #ff2950 100%);
+            color: #333;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: #f5f5f5;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+        
+        header {
+            background: linear-gradient(90deg, #76081c, #ff2950);
+            color: white;
+            padding: 25px;
+            text-align: center;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+        
+        .upload-section {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-around;
+            padding: 30px;
+            gap: 20px;
+        }
+        
+        .file-upload {
+            flex: 1;
+            min-width: 300px;
+            background: #f5f5f5;
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            transition: transform 0.3s ease;
+        }
+        
+        .file-upload:hover {
+            transform: translateY(-5px);
+        }
+        
+        .file-upload h2 {
+            color: #76081c;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        
+        .drop-area {
+            border: 2px dashed #ff2950;
+            border-radius: 10px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: background 0.3s;
+            margin-bottom: 15px;
+            position: relative;
+            min-height: 200px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .drop-area.active {
+            background: rgba(255, 41, 80, 0.2);
+            border-color: #76081c;
+        }
+        
+        .drop-area i {
+            font-size: 48px;
+            color: #ff2950;
+            margin-bottom: 10px;
+        }
+        
+        .file-input {
+            display: none;
+        }
+        
+        .file-info {
+            margin-top: 15px;
+            font-size: 0.9rem;
+            color: #666;
+        }
+        
+        .file-preview {
+            margin-top: 15px;
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 10px;
+            background: white;
+        }
+        
+        .preview-table {
+            width: 100%;
+            font-size: 0.8rem;
+            border-collapse: collapse;
+        }
+        
+        .preview-table th, .preview-table td {
+            padding: 5px;
+            border: 1px solid #eee;
+            text-align: left;
+        }
+        
+        .preview-table th {
+            background: #f5f5f5;
+            font-weight: bold;
+        }
+        
+        .compare-btn {
+            display: block;
+            width: 200px;
+            margin: 30px auto;
+            padding: 15px;
+            background: linear-gradient(90deg, #76081c, #ff2950);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.3s, box-shadow 0.3s;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .compare-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        .compare-btn:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .spinner {
+            border: 4px solid #f5f5f5;
+            border-top: 4px solid #ff2950;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .results-section {
+            padding: 0 30px 30px;
+            display: none;
+        }
+        
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #eee;
+        }
+        
+        .results-title {
+            font-size: 1.8rem;
+            color: #76081c;
+        }
+        
+        .legend {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+        }
+        
+        .new-two {
+            background-color: #ff2950;
+        }
+        
+        .improved {
+            background-color: #4CAF50;
+        }
+        
+        .worsened {
+            background-color: #FFC107;
+        }
+        
+        .new-student {
+            background-color: #76081c;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        th, td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+        
+        th {
+            background: linear-gradient(90deg, #76081c, #ff2950);
+            color: white;
+            font-weight: 600;
+        }
+        
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+        
+        .new-two-row {
+            background-color: rgba(255, 41, 80, 0.1);
+        }
+        
+        .improved-row {
+            background-color: rgba(76, 175, 80, 0.1);
+        }
+        
+        .worsened-row {
+            background-color: rgba(255, 193, 7, 0.1);
+        }
+        
+        .new-student-row {
+            background-color: rgba(118, 8, 28, 0.1);
+        }
+        
+        .no-changes {
+            text-align: center;
+            padding: 40px;
+            font-size: 1.2rem;
+            color: #666;
+        }
+        
+        .export-buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .export-btn {
+            display: inline-block;
+            padding: 12px 24px;
+            background: linear-gradient(90deg, #76081c, #ff2950);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: transform 0.3s;
+            flex: 1;
+            min-width: 150px;
+            text-align: center;
+        }
+        
+        .export-btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .export-btn.csv {
+            background: linear-gradient(90deg, #00b09b, #96c93d);
+        }
+        
+        .export-btn.excel {
+            background: linear-gradient(90deg, #2196F3, #21CBF3);
+        }
+        
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            margin: 20px 0;
+            gap: 15px;
+        }
+        
+        .stat-card {
+            background: #f5f5f5;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            flex: 1;
+            min-width: 150px;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #76081c;
+            margin: 10px 0;
+        }
+        
+        .stat-label {
+            font-size: 0.9rem;
+            color: #666;
+        }
+        
+        .file-count {
+            font-size: 0.8rem;
+            color: #666;
+            margin-top: 5px;
+        }
+        
+        footer {
+            text-align: center;
+            padding: 20px;
+            margin-top: 30px;
+            color: white;
+            font-size: 0.9rem;
+        }
+        
+        @media (max-width: 768px) {
+            .upload-section {
+                flex-direction: column;
+            }
+            
+            .file-upload {
+                min-width: 100%;
+            }
+            
+            .results-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+            
+            .stats {
+                flex-direction: column;
+            }
+            
+            .export-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Умный журнал</h1>
+            <p class="subtitle">Сравнение оценок и отслеживание изменений</p>
+        </header>
+        
+        <section class="upload-section">
+            <div class="file-upload">
+                <h2>Старый файл оценок</h2>
+                <div class="drop-area" id="dropArea1">
+                    <i>📁</i>
+                    <p>Перетащите XLSX файл сюда или нажмите для выбора</p>
+                    <p class="file-info">Формат: №, Ученик, Оценка</p>
+                    <input type="file" id="file1" class="file-input" accept=".xlsx,.xls">
+                </div>
+                <div id="fileInfo1"></div>
+                <div id="filePreview1" class="file-preview"></div>
+            </div>
+            
+            <div class="file-upload">
+                <h2>Новый файл оценок</h2>
+                <div class="drop-area" id="dropArea2">
+                    <i>📁</i>
+                    <p>Перетащите XLSX файл сюда или нажмите для выбора</p>
+                    <p class="file-info">Формат: №, Ученик, Оценка</p>
+                    <input type="file" id="file2" class="file-input" accept=".xlsx,.xls">
+                </div>
+                <div id="fileInfo2"></div>
+                <div id="filePreview2" class="file-preview"></div>
+            </div>
+        </section>
+        
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Обработка файлов...</p>
+        </div>
+        
+        <button id="compareBtn" class="compare-btn" disabled>Сравнить оценки</button>
+        
+        <section class="results-section" id="resultsSection">
+            <div class="results-header">
+                <h2 class="results-title">Результаты сравнения</h2>
+                <div class="legend">
+                    <div class="legend-item">
+                        <div class="legend-color new-two"></div>
+                        <span>Новая "2"</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color improved"></div>
+                        <span>Улучшение оценки</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color worsened"></div>
+                        <span>Ухудшение оценки</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color new-student"></div>
+                        <span>Новый ученик</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="stats" id="statsSection"></div>
+            
+            <div id="resultsTable"></div>
+            
+            <div class="export-buttons">
+                <button id="exportExcelBtn" class="export-btn excel">Экспорт в Excel</button>
+            </div>
+        </section>
+    </div>
+    
+    <footer>
+        <p>Умный журнал | Сравнение оценок для учителей</p>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const dropArea1 = document.getElementById('dropArea1');
+            const dropArea2 = document.getElementById('dropArea2');
+            const fileInput1 = document.getElementById('file1');
+            const fileInput2 = document.getElementById('file2');
+            const fileInfo1 = document.getElementById('fileInfo1');
+            const fileInfo2 = document.getElementById('fileInfo2');
+            const filePreview1 = document.getElementById('filePreview1');
+            const filePreview2 = document.getElementById('filePreview2');
+            const compareBtn = document.getElementById('compareBtn');
+            const resultsSection = document.getElementById('resultsSection');
+            const resultsTable = document.getElementById('resultsTable');
+            const statsSection = document.getElementById('statsSection');
+            const exportCsvBtn = document.getElementById('exportCsvBtn');
+            const exportExcelBtn = document.getElementById('exportExcelBtn');
+            const loading = document.getElementById('loading');
+            
+            let file1Data = null;
+            let file2Data = null;
+            let currentChanges = [];
+            
+            setupFileUpload(dropArea1, fileInput1, fileInfo1, filePreview1, 1);
+            setupFileUpload(dropArea2, fileInput2, fileInfo2, filePreview2, 2);
+            
+            function setupFileUpload(dropArea, fileInput, fileInfo, filePreview, fileNumber) {
+                dropArea.addEventListener('click', () => fileInput.click());
+                
+                ['dragover', 'dragenter'].forEach(event => {
+                    dropArea.addEventListener(event, (e) => {
+                        e.preventDefault();
+                        dropArea.classList.add('active');
+                    });
+                });
+                
+                ['dragleave', 'dragend', 'drop'].forEach(event => {
+                    dropArea.addEventListener(event, (e) => {
+                        e.preventDefault();
+                        dropArea.classList.remove('active');
+                    });
+                });
+                
+                dropArea.addEventListener('drop', (e) => {
+                    const files = e.dataTransfer.files;
+                    if (files.length) {
+                        fileInput.files = files;
+                        handleFileSelect(files[0], fileNumber);
+                    }
+                });
+                
+                fileInput.addEventListener('change', (e) => {
+                    if (e.target.files.length) {
+                        handleFileSelect(e.target.files[0], fileNumber);
+                    }
+                });
+            }
+            
+            function handleFileSelect(file, fileNumber) {
+                const fileInfo = fileNumber === 1 ? fileInfo1 : fileInfo2;
+                const filePreview = fileNumber === 1 ? filePreview1 : filePreview2;
+                
+                if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
+                    fileInfo.innerHTML = `<p><strong>Выбран файл:</strong> ${file.name}</p>`;
+                    parseXLSX(file, fileNumber, filePreview);
+                } else {
+                    fileInfo.innerHTML = `<p style="color: red;">Неверный формат файла. Используйте XLSX или XLS.</p>`;
+                }
+            }
+
+            function parseXLSX(file, fileNumber, filePreview) {
+                loading.style.display = 'block';
+                
+                const reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    try {
+                        const data = new Uint8Array(e.target.result);
+                        const workbook = XLSX.read(data, { 
+                            type: 'array',
+                            cellText: false,
+                            cellDates: true,
+                            raw: true
+                        });
+                        
+                        const firstSheetName = workbook.SheetNames[0];
+                        const worksheet = workbook.Sheets[firstSheetName];
+                        
+                        const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                        
+                        const formattedData = processExcelData(jsonData);
+                        
+                        showFilePreview(formattedData, filePreview, fileNumber);
+                        
+                        if (fileNumber === 1) {
+                            file1Data = formattedData;
+                        } else {
+                            file2Data = formattedData;
+                        }
+                        
+                        updateCompareButton();
+                        
+                    } catch (error) {
+                        console.error('Ошибка:', error);
+                        const fileInfo = fileNumber === 1 ? fileInfo1 : fileInfo2;
+                        fileInfo.innerHTML += `<p style="color: red;">Ошибка чтения файла</p>`;
+                    } finally {
+                        loading.style.display = 'none';
+                    }
+                };
+                
+                reader.readAsArrayBuffer(file);
+            }
+
+            function processExcelData(jsonData) {
+                const result = [];
+                
+                if (!jsonData || jsonData.length === 0) {
+                    return result;
+                }
+                
+                let startRow = 0;
+                for (let i = 0; i < Math.min(3, jsonData.length); i++) {
+                    const row = jsonData[i];
+                    if (Array.isArray(row) && row.length >= 2) {
+                        const firstCell = String(row[0] || '').toLowerCase();
+                        if (firstCell.includes('№') || firstCell.includes('номер') || 
+                            firstCell.includes('фио') || firstCell.includes('имя')) {
+                            startRow = i + 1;
+                            break;
+                        }
+                    }
+                }
+                
+                for (let i = startRow; i < jsonData.length; i++) {
+                    const row = jsonData[i];
+                    if (!Array.isArray(row) || row.length < 2) continue;
+                    
+                    let id, name, grade;
+                    
+                    if (row.length >= 3) {
+                        id = String(row[0] || '').trim();
+                        name = String(row[1] || '').trim();
+                        grade = String(row[2] || '').trim();
+                    } else {
+                        id = (result.length + 1).toString();
+                        name = String(row[0] || '').trim();
+                        grade = String(row[1] || '').trim();
+                    }
+                    
+                    if (name && name.length > 1 && grade && !isNaN(parseInt(grade))) {
+                        result.push({
+                            id: id || (result.length + 1).toString(),
+                            name: name,
+                            grade: parseInt(grade).toString()
+                        });
+                    }
+                }
+                
+                return result;
+            }
+            
+            function updateCompareButton() {
+                if (file1Data && file2Data && file1Data.length > 0 && file2Data.length > 0) {
+                    compareBtn.disabled = false;
+                } else {
+                    compareBtn.disabled = true;
+                }
+            }
+
+            function showFilePreview(data, previewElement, fileNumber) {
+                if (!data || data.length === 0) {
+                    previewElement.innerHTML = '<p style="color: #666; text-align: center;">Нет данных для отображения</p>';
+                    return;
+                }
+                
+                let previewHTML = `
+                    <div class="file-count">Записей: ${data.length}</div>
+                    <table class="preview-table">
+                        <thead>
+                            <tr>
+                                <th>№</th>
+                                <th>Имя</th>
+                                <th>Оценка</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+                
+                data.slice(0, 5).forEach(student => {
+                    previewHTML += `
+                        <tr>
+                            <td>${student.id}</td>
+                            <td>${student.name}</td>
+                            <td>${student.grade}</td>
+                        </tr>
+                    `;
+                });
+                
+                previewHTML += `
+                        </tbody>
+                    </table>
+                `;
+                
+                if (data.length > 5) {
+                    previewHTML += `<p style="font-size: 0.8rem; color: #666; text-align: center;">
+                        ... и еще ${data.length - 5} записей
+                    </p>`;
+                }
+                
+                previewElement.innerHTML = previewHTML;
+            }
+            
+            compareBtn.addEventListener('click', function() {
+                if (!file1Data || !file2Data) return;
+                
+                loading.style.display = 'block';
+                
+                setTimeout(() => {
+                    currentChanges = compareData(file1Data, file2Data);
+                    displayResults(currentChanges);
+                    loading.style.display = 'none';
+                }, 100);
+            });
+
+            function compareData(oldData, newData) {
+                const changes = [];
+                const stats = {
+                    newTwos: 0,
+                    improvements: 0,
+                    worsenings: 0,
+                    newStudents: 0,
+                    totalChanges: 0
+                };
+                
+                const oldDataMap = new Map();
+                oldData.forEach(student => {
+                    const key = normalizeName(student.name);
+                    if (key && !oldDataMap.has(key)) {
+                        oldDataMap.set(key, student);
+                    }
+                });
+                
+                const newDataMap = new Map();
+                newData.forEach(student => {
+                    const key = normalizeName(student.name);
+                    if (key && !newDataMap.has(key)) {
+                        newDataMap.set(key, student);
+                    }
+                });
+                
+                oldDataMap.forEach((oldStudent, key) => {
+                    const newStudent = newDataMap.get(key);
+                    if (newStudent) {
+                        const oldGrade = parseInt(oldStudent.grade);
+                        const newGrade = parseInt(newStudent.grade);
+                        
+                        if (oldGrade !== newGrade) {
+                            let changeType, rowClass;
+                            
+                            if (newGrade === 2 && oldGrade !== 2) {
+                                changeType = 'Новая "2"';
+                                rowClass = 'new-two-row';
+                                stats.newTwos++;
+                            } else if (newGrade > oldGrade) {
+                                changeType = 'Улучшение';
+                                rowClass = 'improved-row';
+                                stats.improvements++;
+                            } else {
+                                changeType = 'Ухудшение';
+                                rowClass = 'worsened-row';
+                                stats.worsenings++;
+                            }
+                            
+                            changes.push({
+                                id: oldStudent.id,
+                                name: oldStudent.name,
+                                oldGrade: oldGrade.toString(),
+                                newGrade: newGrade.toString(),
+                                changeType: changeType,
+                                rowClass: rowClass
+                            });
+                        }
+                    }
+                });
+                
+                newDataMap.forEach((newStudent, key) => {
+                    if (!oldDataMap.has(key)) {
+                        const changeType = newStudent.grade === '2' ? 'Новый ученик с "2"' : 'Новый ученик';
+                        const rowClass = 'new-student-row';
+                        
+                        changes.push({
+                            id: newStudent.id,
+                            name: newStudent.name,
+                            oldGrade: '-',
+                            newGrade: newStudent.grade,
+                            changeType: changeType,
+                            rowClass: rowClass
+                        });
+                        
+                        stats.newStudents++;
+                    }
+                });
+                
+                stats.totalChanges = changes.length;
+                changes.stats = stats;
+                
+                return changes;
+            }
+            
+            function normalizeName(name) {
+                return name.trim().toLowerCase().replace(/\s+/g, ' ');
+            }
+
+            function displayResults(changes) {
+                resultsSection.style.display = 'block';
+                displayStats(changes.stats);
+                
+                if (changes.length === 0) {
+                    resultsTable.innerHTML = '<div class="no-changes">Изменений не обнаружено</div>';
+                    exportCsvBtn.style.display = 'none';
+                    exportExcelBtn.style.display = 'none';
+                    return;
+                }
+                
+                let tableHTML = `
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>№</th>
+                                <th>Ученик</th>
+                                <th>Старая оценка</th>
+                                <th>Новая оценка</th>
+                                <th>Тип изменения</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+                
+                changes.forEach(change => {
+                    tableHTML += `
+                        <tr class="${change.rowClass}">
+                            <td>${change.id}</td>
+                            <td>${change.name}</td>
+                            <td>${change.oldGrade}</td>
+                            <td>${change.newGrade}</td>
+                            <td><strong>${change.changeType}</strong></td>
+                        </tr>
+                    `;
+                });
+                
+                tableHTML += `</tbody></table>`;
+                resultsTable.innerHTML = tableHTML;
+                exportCsvBtn.style.display = 'inline-block';
+                exportExcelBtn.style.display = 'inline-block';
+                
+                resultsSection.scrollIntoView({ behavior: 'smooth' });
+            }
+            
+            function displayStats(stats) {
+                statsSection.innerHTML = `
+                    <div class="stat-card">
+                        <div class="stat-value">${stats.totalChanges}</div>
+                        <div class="stat-label">Всего изменений</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">${stats.newTwos}</div>
+                        <div class="stat-label">Новых "2"</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">${stats.improvements}</div>
+                        <div class="stat-label">Улучшений</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">${stats.worsenings}</div>
+                        <div class="stat-label">Ухудшений</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">${stats.newStudents}</div>
+                        <div class="stat-label">Новых учеников</div>
+                    </div>
+                `;
+            }
+            
+            exportExcelBtn.addEventListener('click', function() {
+                if (currentChanges.length === 0) return;
+                
+                const excelData = [
+                    ['Отчет о сравнении оценок', '', '', '', ''],
+                    ['Дата создания:', new Date().toLocaleString('ru-RU'), '', '', ''],
+                    ['', '', '', '', ''],
+                    ['№', 'Ученик', 'Старая оценка', 'Новая оценка', 'Тип изменения']
+                ];
+                
+                currentChanges.forEach(change => {
+                    excelData.push([
+                        change.id,
+                        change.name,
+                        change.oldGrade,
+                        change.newGrade,
+                        change.changeType
+                    ]);
+                });
+                
+                excelData.push(['', '', '', '', '']);
+                excelData.push(['Статистика изменений:', '', '', '', '']);
+                excelData.push(['Всего изменений:', currentChanges.stats.totalChanges, '', '', '']);
+                excelData.push(['Новых "2":', currentChanges.stats.newTwos, '', '', '']);
+                excelData.push(['Улучшений:', currentChanges.stats.improvements, '', '', '']);
+                excelData.push(['Ухудшений:', currentChanges.stats.worsenings, '', '', '']);
+                excelData.push(['Новых учеников:', currentChanges.stats.newStudents, '', '', '']);
+                
+                const wb = XLSX.utils.book_new();
+                const ws = XLSX.utils.aoa_to_sheet(excelData);
+                
+                const colWidths = [
+                    { wch: 8 }, 
+                    { wch: 25 }, 
+                    { wch: 12 },
+                    { wch: 12 },
+                    { wch: 20 }  
+                ];
+                ws['!cols'] = colWidths;
+    
+                if (!ws['!merges']) ws['!merges'] = [];
+                ws['!merges'].push({ s: { r: 0, c: 0 }, e: { r: 0, c: 4 } });
+                ws['!merges'].push({ s: { r: 1, c: 1 }, e: { r: 1, c: 4 } });
+                
+                XLSX.utils.book_append_sheet(wb, ws, 'Сравнение оценок');
+                
+                const fileName = `сравнение_оценок_${new Date().toISOString().slice(0, 10)}.xlsx`;
+                XLSX.writeFile(wb, fileName);
+            });
+        });
+    </script>
+</body>
+</html>
