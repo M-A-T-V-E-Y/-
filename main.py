@@ -27,7 +27,6 @@ imag = imag.resize((width, height))
 image = ImageTk.PhotoImage(imag)
 panel = Label(wnd, image=image)
 panel.pack(side="top", fill="both")
-#panel.pack(side="top", fill="both", expand="no")
 wnd.geometry(f'{width}x{height}')
 
 def sravnit():  #функция сравнения 
@@ -40,6 +39,7 @@ btn_c2.place(x=200, y=200)
 
 btn_go = Button(text='Сравнить',command=sravnit) #кнопка запуска сравнения
 btn_go.place(x=200, y=300)
+btn_c2.pack()
 
 
 lbl_file1 = Label(text="Ранний файл\nНа данный момент файл не загружен", bg="#f5f5f5") #отображение файл1
@@ -47,7 +47,6 @@ lbl_file1.place(x=width//2, y=height//3)
 
 lbl_file2 = Label(text="Поздний файл\nНа данный момент файл не загружен", bg="#f5f5f5") #отображение файл2
 lbl_file2.place(x=width//2, y=height//4)
-
 
 
 # canvas = tk.Canvas(root, width=width, height=height)
@@ -61,6 +60,5 @@ lbl_file2.place(x=width//2, y=height//4)
 #
 # # Создаем текст через create_text, в отличие от Label у него будет прозрачный фон
 # canvas.create_text(100, 100, text="Cat", fill="Yellow", font="Verdana 14")
-
 
 wnd.mainloop()
