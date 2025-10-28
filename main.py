@@ -4,10 +4,10 @@ wnd = Tk()
 wnd.title('Отчёт успеваемости')
 wnd.geometry('700x700')
 
-def sravnit():
+def sravnit():  #функция сравнения 
     pass
 
-def choose():
+def choose():   #выбор файлов
     pass
 
 btn_go = Button(text='Сравнить',command=sravnit) #кнопка запуска сравнения
