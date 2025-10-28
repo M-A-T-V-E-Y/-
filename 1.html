@@ -313,10 +313,6 @@
             transform: translateY(-2px);
         }
         
-        .export-btn.csv {
-            background: linear-gradient(90deg, #00b09b, #96c93d);
-        }
-        
         .export-btn.excel {
             background: linear-gradient(90deg, #2196F3, #21CBF3);
         }
@@ -481,7 +477,6 @@
             const resultsSection = document.getElementById('resultsSection');
             const resultsTable = document.getElementById('resultsTable');
             const statsSection = document.getElementById('statsSection');
-            const exportCsvBtn = document.getElementById('exportCsvBtn');
             const exportExcelBtn = document.getElementById('exportExcelBtn');
             const loading = document.getElementById('loading');
             
@@ -489,6 +484,7 @@
             let file2Data = null;
             let currentChanges = [];
             
+            // Обработчики для файлов
             setupFileUpload(dropArea1, fileInput1, fileInfo1, filePreview1, 1);
             setupFileUpload(dropArea2, fileInput2, fileInfo2, filePreview2, 2);
             
@@ -554,10 +550,13 @@
                         const firstSheetName = workbook.SheetNames[0];
                         const worksheet = workbook.Sheets[firstSheetName];
                         
+                        // Преобразуем в JSON
                         const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
                         
+                        // Обрабатываем данные
                         const formattedData = processExcelData(jsonData);
                         
+                        // Показываем превью
                         showFilePreview(formattedData, filePreview, fileNumber);
                         
                         if (fileNumber === 1) {
@@ -566,6 +565,7 @@
                             file2Data = formattedData;
                         }
                         
+                        // Активируем кнопку сравнения
                         updateCompareButton();
                         
                     } catch (error) {
@@ -587,19 +587,21 @@
                     return result;
                 }
                 
+                // Находим начало данных (пропускаем заголовки)
                 let startRow = 0;
                 for (let i = 0; i < Math.min(3, jsonData.length); i++) {
                     const row = jsonData[i];
                     if (Array.isArray(row) && row.length >= 2) {
                         const firstCell = String(row[0] || '').toLowerCase();
                         if (firstCell.includes('№') || firstCell.includes('номер') || 
-                            firstCell.includes('фио') || firstCell.includes('имя')) {
+                            firstCell.includes('фио') || firstCell.includes('ученик')) {
                             startRow = i + 1;
                             break;
                         }
                     }
                 }
                 
+                // Обрабатываем данные
                 for (let i = startRow; i < jsonData.length; i++) {
                     const row = jsonData[i];
                     if (!Array.isArray(row) || row.length < 2) continue;
@@ -616,11 +618,12 @@
                         grade = String(row[1] || '').trim();
                     }
                     
+                    // Валидация данных
                     if (name && name.length > 1 && grade && !isNaN(parseInt(grade))) {
                         result.push({
                             id: id || (result.length + 1).toString(),
                             name: name,
-                            grade: parseInt(grade).toString()
+                            grade: parseInt(grade).toString() // Нормализуем оценку
                         });
                     }
                 }
@@ -631,8 +634,10 @@
             function updateCompareButton() {
                 if (file1Data && file2Data && file1Data.length > 0 && file2Data.length > 0) {
                     compareBtn.disabled = false;
+                    compareBtn.textContent = 'Сравнить оценки';
                 } else {
                     compareBtn.disabled = true;
+                    compareBtn.textContent = 'Сравнить оценки';
                 }
             }
 
@@ -648,7 +653,7 @@
                         <thead>
                             <tr>
                                 <th>№</th>
-                                <th>Имя</th>
+                                <th>Ученик</th>
                                 <th>Оценка</th>
                             </tr>
                         </thead>
@@ -679,6 +684,7 @@
                 previewElement.innerHTML = previewHTML;
             }
             
+            // ОПТИМИЗИРОВАННОЕ СРАВНЕНИЕ
             compareBtn.addEventListener('click', function() {
                 if (!file1Data || !file2Data) return;
                 
@@ -701,6 +707,7 @@
                     totalChanges: 0
                 };
                 
+                // Создаем Map для быстрого поиска
                 const oldDataMap = new Map();
                 oldData.forEach(student => {
                     const key = normalizeName(student.name);
@@ -717,6 +724,7 @@
                     }
                 });
                 
+                // Ищем изменения у существующих учеников
                 oldDataMap.forEach((oldStudent, key) => {
                     const newStudent = newDataMap.get(key);
                     if (newStudent) {
@@ -752,6 +760,7 @@
                     }
                 });
                 
+                // Ищем новых учеников
                 newDataMap.forEach((newStudent, key) => {
                     if (!oldDataMap.has(key)) {
                         const changeType = newStudent.grade === '2' ? 'Новый ученик с "2"' : 'Новый ученик';
@@ -786,7 +795,6 @@
                 
                 if (changes.length === 0) {
                     resultsTable.innerHTML = '<div class="no-changes">Изменений не обнаружено</div>';
-                    exportCsvBtn.style.display = 'none';
                     exportExcelBtn.style.display = 'none';
                     return;
                 }
@@ -819,7 +827,6 @@
                 
                 tableHTML += `</tbody></table>`;
                 resultsTable.innerHTML = tableHTML;
-                exportCsvBtn.style.display = 'inline-block';
                 exportExcelBtn.style.display = 'inline-block';
                 
                 resultsSection.scrollIntoView({ behavior: 'smooth' });
@@ -850,9 +857,11 @@
                 `;
             }
             
+            // ЭКСПОРТ В EXCEL
             exportExcelBtn.addEventListener('click', function() {
                 if (currentChanges.length === 0) return;
                 
+                // Создаем данные для Excel
                 const excelData = [
                     ['Отчет о сравнении оценок', '', '', '', ''],
                     ['Дата создания:', new Date().toLocaleString('ru-RU'), '', '', ''],
@@ -860,6 +869,7 @@
                     ['№', 'Ученик', 'Старая оценка', 'Новая оценка', 'Тип изменения']
                 ];
                 
+                // Добавляем данные
                 currentChanges.forEach(change => {
                     excelData.push([
                         change.id,
@@ -870,6 +880,7 @@
                     ]);
                 });
                 
+                // Добавляем статистику
                 excelData.push(['', '', '', '', '']);
                 excelData.push(['Статистика изменений:', '', '', '', '']);
                 excelData.push(['Всего изменений:', currentChanges.stats.totalChanges, '', '', '']);
@@ -878,24 +889,29 @@
                 excelData.push(['Ухудшений:', currentChanges.stats.worsenings, '', '', '']);
                 excelData.push(['Новых учеников:', currentChanges.stats.newStudents, '', '', '']);
                 
+                // Создаем рабочую книгу
                 const wb = XLSX.utils.book_new();
                 const ws = XLSX.utils.aoa_to_sheet(excelData);
                 
+                // Настраиваем ширину колонок
                 const colWidths = [
-                    { wch: 8 }, 
-                    { wch: 25 }, 
-                    { wch: 12 },
-                    { wch: 12 },
-                    { wch: 20 }  
+                    { wch: 8 },  // №
+                    { wch: 25 }, // Ученик
+                    { wch: 12 }, // Старая оценка
+                    { wch: 12 }, // Новая оценка
+                    { wch: 20 }  // Тип изменения
                 ];
                 ws['!cols'] = colWidths;
-    
+                
+                // Добавляем стили для заголовков
                 if (!ws['!merges']) ws['!merges'] = [];
                 ws['!merges'].push({ s: { r: 0, c: 0 }, e: { r: 0, c: 4 } });
                 ws['!merges'].push({ s: { r: 1, c: 1 }, e: { r: 1, c: 4 } });
                 
+                // Добавляем лист в книгу
                 XLSX.utils.book_append_sheet(wb, ws, 'Сравнение оценок');
                 
+                // Сохраняем файл
                 const fileName = `сравнение_оценок_${new Date().toISOString().slice(0, 10)}.xlsx`;
                 XLSX.writeFile(wb, fileName);
             });
